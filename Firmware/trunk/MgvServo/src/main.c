@@ -284,6 +284,7 @@ void main()
 	
 	// Initialize
 	InitializeIO();  
+AfterInitializeIO:	
 #ifdef LED
 	LED = LED_ON;
 #endif
@@ -362,6 +363,9 @@ void main()
 		{
 			// Process programming commands
 			ProgramLoop();
+			// Jump to initialization to do an "almost" full reset.
+			GIE = 0;
+			goto AfterInitializeIO;
 		} 
 		else
 		{		
