@@ -130,7 +130,7 @@ void ISR() interrupt 0
 				{
 					servoStatePtr->pulseWidth = pulseWidth + 1;
 				}
-				else 
+				else if (pulseWidth > pulseWidthTarget) 
 				{
 					servoStatePtr->pulseWidth = pulseWidth - 1;
 				}
