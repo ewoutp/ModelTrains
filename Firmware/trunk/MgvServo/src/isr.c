@@ -47,11 +47,12 @@ Interrupt service routine.
 This function is called twice per 5ms.
 The first time is starts the pulse for a servo, the second time it ends the pulse for a servo.
 */
+/* The following are local variables, but the compiler is buggy, so we make them always static */
+volatile static unsigned char pulseWidth; // Width of pulse in 10us
+volatile static unsigned char pulseWidthTarget;
+volatile static unsigned char adjustMask;
 void ISR() interrupt 0
 {
-	volatile static unsigned char pulseWidth; // Width of pulse in 10us
-	volatile static unsigned char pulseWidthTarget;
-	volatile static unsigned char adjustMask;
 	static UU16 tmr1;	
 	static unsigned int tmp;
 	static ServoState* tmpStatePtr;
