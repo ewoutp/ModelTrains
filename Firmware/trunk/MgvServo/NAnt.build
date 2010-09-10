@@ -21,6 +21,7 @@
 			<!-- Set device -->
 			<property name="device" value="16F628a" overwrite="true"/>
 			<property name="device" value="16F648a" overwrite="true" if="${model=='MGV136'}"/>
+			<property name="device" value="16F648a" overwrite="true"/> <!-- Force a 16F648 -->
 
 			<!-- Build -->
 			<mkdir dir="${builddir}\${model}\obj"/>
