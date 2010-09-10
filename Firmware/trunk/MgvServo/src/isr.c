@@ -89,7 +89,8 @@ void ISR() interrupt 0
 		} 
 		else 
 		{
-			OUTPUT |= zero;
+			OUTPUT |= servoBit;
+			//OUTPUT |= zero;
 		}		
 	}
 	else 
