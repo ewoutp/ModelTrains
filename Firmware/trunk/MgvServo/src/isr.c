@@ -25,6 +25,7 @@ volatile static unsigned char isrState;
 volatile static ServoState servoStates[4];
 volatile static ServoState* servoStatePtr;
 static unsigned char servoBit;
+volatile unsigned char readyForInterrupts;
 #ifdef FEEDBACK
 static unsigned char feedbackMask;
 #endif
@@ -48,9 +49,9 @@ The first time is starts the pulse for a servo, the second time it ends the puls
 */
 void ISR() interrupt 0
 {
-	static unsigned char pulseWidth; // Width of pulse in 10us
-	static unsigned char pulseWidthTarget;
-	static unsigned char adjustMask;
+	volatile static unsigned char pulseWidth; // Width of pulse in 10us
+	volatile static unsigned char pulseWidthTarget;
+	volatile static unsigned char adjustMask;
 	static UU16 tmr1;	
 	static unsigned int tmp;
 	static ServoState* tmpStatePtr;
@@ -174,6 +175,7 @@ void SetupTimer()
 	// Initialize state variables
 	isrState = 0;
 	servoBit = CLK_BIT(0);
+	readyForInterrupts = 0;
 #ifdef RELAY
 	allRelayBits = 0;
 #endif
@@ -236,7 +238,10 @@ void SetServoTarget(unsigned char index, unsigned char pulseWidthTarget)
 #endif
 
 	// Turn interrupts on
-	GIE = 1; 
+	if (readyForInterrupts) 
+	{
+		GIE = 1; 
+	}
 }
 
 /*
@@ -258,7 +263,10 @@ void SetServoAdjust(unsigned char index, unsigned char adjustMask)
 	state->adjustMask = adjustMask;
 	
 	// Turn interrupts on
-	GIE = 1; 
+	if (readyForInterrupts) 
+	{
+		GIE = 1; 
+	}
 }
 
 #ifdef FEEDBACK
@@ -276,3 +284,12 @@ void UpdateFeedbacks(unsigned char input)
 	if (feedbackMask & CLK_BIT(3)) { FEEDBACK4 = (input & 0x01); }
 }
 #endif
+
+
+/*
+The GIE may be enabled after this method has been called.
+*/
+void ReadyForInterrupts()
+{
+	readyForInterrupts = 1;
+}

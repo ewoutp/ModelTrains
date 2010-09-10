@@ -349,6 +349,7 @@ void main()
 
 	// We're now ready for normal operations, turn on the interrupts
 	GIE = 1; 	// Global enable interrupts
+	ReadyForInterrupts();
 
 	// Perform main loop for ever
 	while (1) {

@@ -61,3 +61,8 @@ void SetServoAdjust(unsigned char servo, unsigned char adjustMask);
 */
 void UpdateFeedbacks(unsigned char input);
 #endif
+
+/*
+The GIE may be enabled after this method has been called.
+*/
+void ReadyForInterrupts();
