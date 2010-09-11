@@ -23,19 +23,6 @@ Setup timer interrupt
 */
 void SetupTimer();
 
-typedef struct {
-	// Current width of the pulse (50 .. 250)
-	unsigned char pulseWidth;
-	// Bitmask for adjusting pulseWidth
-	unsigned char adjustMask;
-	// Destination pulse width, if reached
-	unsigned char pulseWidthTarget;
-#ifdef RELAY	
-	// Relay setting for the target position
-	unsigned char relayBits;
-#endif
-} ServoState;
-
 /*
 Change the target of the servo
 Servo: 0,1,2,3
