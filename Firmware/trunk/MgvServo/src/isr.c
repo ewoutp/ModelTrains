@@ -123,6 +123,18 @@ void ISR() interrupt 0
 		}
 		else
 		{
+			// If we get here, the feedback mask MUST be cleared.
+#ifdef FEEDBACK
+			if (feedbackMask &= servoBit) 
+			{
+				// This is an error condition
+#ifdef LED
+				LED = LED_ON;
+#endif		
+				while (1); // Do not return
+			}
+#endif
+		
 			// Only adjust when bit in adjust mask is set.
 			if ((ADJUST_BIT(isrState) & adjustMask) != 0) 
 			{
