@@ -21,9 +21,19 @@
 #include "device.h"
 #include "isr.h"
 
+// Current state of the interrupt routine.
+// This value ranges from 0..7 (2 values per servo)
 volatile static unsigned char isrState;
-volatile static ServoState servoStates[4];
-volatile static ServoState* servoStatePtr;
+// Current pulse width of each servo
+volatile static unsigned char servoPulseWidth[4]; 
+// Target pulse width of each servo
+volatile static unsigned char servoPulseWidthTarget[4]; 
+// Bitmask for adjusting pulse width of each servo
+volatile static unsigned char servoAdjustMask[4]; 
+#ifdef RELAY 
+// Bitmask for adjusting pulse width of each servo
+volatile static unsigned char servoRelayBits[4]; 
+#endif
 static unsigned char servoBit;
 volatile unsigned char readyForInterrupts;
 #ifdef FEEDBACK
@@ -51,11 +61,11 @@ The first time is starts the pulse for a servo, the second time it ends the puls
 volatile static unsigned char pulseWidth; // Width of pulse in 10us
 volatile static unsigned char pulseWidthTarget;
 volatile static unsigned char adjustMask;
+volatile static unsigned char servoStateIndex;
 void ISR() interrupt 0
 {
 	static UU16 tmr1;	
 	static unsigned int tmp;
-	static ServoState* tmpStatePtr;
 	
 	// Test if interrupt comes from TMR1
 	if (!TMR1IF) 
@@ -63,9 +73,10 @@ void ISR() interrupt 0
 		return; 
 	}
 	
-	pulseWidth = servoStatePtr->pulseWidth;
-	pulseWidthTarget = servoStatePtr->pulseWidthTarget;
-	adjustMask = servoStatePtr->adjustMask;
+	servoStateIndex = (isrState >> 1) & 0x03;
+	pulseWidth = servoPulseWidth[servoStateIndex];
+	pulseWidthTarget = servoPulseWidthTarget[servoStateIndex];
+	adjustMask = servoAdjustMask[servoStateIndex];
 	tmp = pulseWidth;
 	tmp = (tmp << 3) + (tmp << 1); // Fast implementation of * 10
 
@@ -91,8 +102,7 @@ void ISR() interrupt 0
 		} 
 		else 
 		{
-			OUTPUT |= servoBit;
-			//OUTPUT |= zero;
+			OUTPUT |= zero;
 		}		
 	}
 	else 
@@ -103,10 +113,13 @@ void ISR() interrupt 0
 		tmr1.U16 += tmp;
 		// Reprogram timer
 		TMR1H = tmr1.U8[MSB];
-		TMR1L = tmr1.U8[LSB];
+		TMR1L = tmr1.U8[LSB];		
 
 		// End pulse
 		OUTPUT &= ~servoBit;
+		
+		// Until here things are time critical.
+		// Changing anything in the above lines, will alter the timing.
 		
 		// Update pulse width
 		if (pulseWidth == pulseWidthTarget) 
@@ -117,8 +130,8 @@ void ISR() interrupt 0
 #endif
 #ifdef RELAY
 			// Hack to workaround compiler bug wrt 3rd argument of _getptr1
-			servoStatePtr->pulseWidth = pulseWidth;
-			RelayEnd(((isrState >> 1) & 0x03), servoStatePtr->relayBits);
+			//servoStatePtr->pulseWidth = pulseWidth;
+			RelayEnd(servoStateIndex, servoRelayBits[servoStateIndex]);
 #endif
 		}
 		else
@@ -140,24 +153,23 @@ void ISR() interrupt 0
 			{
 				if (pulseWidth < pulseWidthTarget) 
 				{
-					servoStatePtr->pulseWidth = pulseWidth + 1;
+					servoPulseWidth[servoStateIndex] = pulseWidth + 1;
 				}
 				else if (pulseWidth > pulseWidthTarget) 
 				{
-					servoStatePtr->pulseWidth = pulseWidth - 1;
+					servoPulseWidth[servoStateIndex] = pulseWidth - 1;
 				}
 			}
 #ifdef RelayMiddle
 			if (pulseWidth == 150) 
 			{
-				RelayMiddle(((isrState >> 1) & 0x03), servoStatePtr->relayBits);
+				RelayMiddle(servoStateIndex, servoRelayBits[servoStateIndex]);
 			}
 #endif			
 		}
 		
 		// Move to next servoState
 		servoBit <<= 1;
-		servoStatePtr++;
 	}
 	
 	// Update state
@@ -169,7 +181,6 @@ void ISR() interrupt 0
 	
 		// Go back to servo 1
 		servoBit = CLK_BIT(0);
-		servoStatePtr = &servoStates[0];
 	}
 	
 	// Next state
@@ -196,14 +207,13 @@ void SetupTimer()
 	for (i = 0; i != 4; i++) 
 	{
 		// Start in the middle position
-		servoStates[i].pulseWidth = 149;
-		servoStates[i].pulseWidthTarget = 150;
-		servoStates[i].adjustMask = 0x03;
+		servoPulseWidth[i] = 149;
+		servoPulseWidthTarget[i] = 150;
+		servoAdjustMask[i] = 0x03;
 #ifdef RELAY
-		servoStates[i].relayBits = 0;
+		servoRelayBits[i] = 0;
 #endif
 	}
-	servoStatePtr = &servoStates[0];
 
 	PORTB = 0;
 	TMR1CS = 0;	// Use internal clock
@@ -228,18 +238,13 @@ void SetServoTarget(unsigned char index, unsigned char pulseWidthTarget, unsigne
 void SetServoTarget(unsigned char index, unsigned char pulseWidthTarget)
 #endif
 {
-	ServoState* state;
-
-	// Get pointer to state info 
-	state = &servoStates[index];
-	
 	// Turn interrupts off
 	GIE = 0;
 
 	// Set state info
-	state->pulseWidthTarget = pulseWidthTarget;
+	servoPulseWidthTarget[index] = pulseWidthTarget;
 #ifdef RELAY
-	state->relayBits = relayBits;
+	servoRelayBits[index] = relayBits;
 #endif
 #ifdef RelayStart 
 	RelayStart(index, relayBits);
@@ -264,16 +269,11 @@ adjustMask: 0,1,2,3
 */
 void SetServoAdjust(unsigned char index, unsigned char adjustMask)
 {
-	ServoState* state;
-
-	// Get pointer to state info 
-	state = &servoStates[index];
-
 	// Turn interrupts off
 	GIE = 0;
 
 	// Update
-	state->adjustMask = adjustMask;
+	servoAdjustMask[index] = adjustMask;
 	
 	// Turn interrupts on
 	if (readyForInterrupts) 
