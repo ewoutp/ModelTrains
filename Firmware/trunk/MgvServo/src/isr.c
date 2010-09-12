@@ -88,7 +88,7 @@ void ISR() interrupt 0
 	{
 		// Next timer is at 0xFFFF - (pulseWidth * 10)
 		// Subtract pulseWidth*10
-		tmr1.U16 += 79; // Compensation needed to get exact timing
+		tmr1.U16 += 78; // Compensation needed to get exact timing
 		tmr1.U16 -= tmp;
 		// Reprogram timer
 		TMR1H = tmr1.U8[MSB];
@@ -109,7 +109,7 @@ void ISR() interrupt 0
 	{
 		// Next timer is at 0xFFFF - (5000 + (pulseWidth * 10))
 		// Add 5000
-		tmr1.U16 -= (5000 - 88); // 88 is compensation needed to get exact timing
+		tmr1.U16 -= (5000 - 87); // 87 is compensation needed to get exact timing
 		tmr1.U16 += tmp;
 		// Reprogram timer
 		TMR1H = tmr1.U8[MSB];
