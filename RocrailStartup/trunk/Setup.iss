@@ -46,7 +46,25 @@ Type: filesandordirs; Name: "{app}";
 
 [CustomMessages]
 StartApp=Start {#AppName}
+InstallDotNet=Install the Microsoft.NET 3.5 Framework first.
 
+[Code]
+const
+  dotnet35URL = 'http://download.microsoft.com/download/7/0/3/703455ee-a747-4cc8-bd3e-98a615c3aedb/dotNetFx35setup.exe';
 
+function InitializeSetup(): Boolean;
+var
+  msgRes : integer;
+  errCode : integer;
 
-
+begin
+  Result := true;
+  // Check for required dotnetfx 3.5 installation
+  if (not RegKeyExists(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v3.5')) then begin
+    msgRes := MsgBox(CustomMessage('InstallDotNet'), mbError, MB_OKCANCEL);
+    if(msgRes = 1) then begin
+      ShellExec('Open', dotnet35URL, '', '', SW_SHOW, ewNoWait, errCode);
+    end;
+    Abort();
+  end;
+end;
