@@ -1,5 +1,5 @@
 /*
- Modelspoorgroep Venlo MGV81 Firmware
+ Modelspoorgroep Venlo MGV136/84/81 Firmware
 
  Copyright (C) Ewout Prangsma <ewout@prangsma.net>
 
@@ -19,7 +19,7 @@
 */
 
 #include "device.h"
-#include "isr.h"
+#include "servo.h"
 #include "eeprom.h"
 
 // EEPROM addresses
@@ -170,6 +170,18 @@ void ReadPositionNibble()
 }
 
 /*
+* Keep processing the servo's until they are all in their target state
+*/
+void MoveServos() 
+{
+	static unsigned char index;
+	for (index = 0; index != 4; index++) 
+	{
+		MoveServo(index);
+	}
+}
+
+/*
 Process programming commands
 */
 void ProgramLoop()
@@ -211,6 +223,7 @@ void ProgramLoop()
 #else
 			SetServoTarget(target, input);
 #endif		
+			MoveServos();
 		}
 		else if (input == 0x03) 
 		{
@@ -224,6 +237,7 @@ void ProgramLoop()
 #else
 			SetServoTarget(target, input);
 #endif		
+			MoveServos();
 		}
 		else if (input == 0x04)
 		{
@@ -289,8 +303,8 @@ AfterInitializeIO:
 	LED = LED_ON;
 #endif
 
-	// Setup interrupt
-	SetupTimer();
+	// Setup servo state
+	SetupServos();
 
 	// Load configuration from EEPROM
 	config = &Configs[0];
@@ -348,10 +362,6 @@ AfterInitializeIO:
 	LED = LED_OFF;
 #endif
 
-	// We're now ready for normal operations, turn on the interrupts
-	GIE = 1; 	// Global enable interrupts
-	ReadyForInterrupts();
-
 	// Perform main loop for ever
 	while (1) {
         // Detect change in input
@@ -364,7 +374,6 @@ AfterInitializeIO:
 			// Process programming commands
 			ProgramLoop();
 			// Jump to initialization to do an "almost" full reset.
-			GIE = 0;
 			goto AfterInitializeIO;
 		} 
 		else
@@ -409,6 +418,10 @@ AfterInitializeIO:
 				config++;
 				mask <<= 1;
 			}
+			
+			// Move servo's a bit
+			MoveServos();
+			
 #ifdef FEEDBACK
 			// Update FEEDBACK bits (unless masked)
 			UpdateFeedbacks(input);
