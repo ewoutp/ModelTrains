@@ -53,7 +53,7 @@
 				<arg value="-o"/>
 				<arg value="${builddir}\${model}\${model}.hex"/>
 				<arg value="${builddir}\${model}\obj\main.o"/>
-				<arg value="${builddir}\${model}\obj\isr.o"/>
+				<arg value="${builddir}\${model}\obj\servo.o"/>
 				<arg value="${builddir}\${model}\obj\eeprom.o"/>
 			</exec>
 		</foreach>
