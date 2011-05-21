@@ -31,7 +31,6 @@ volatile static unsigned char servoAdjustMask[4];
 // Bitmask for adjusting pulse width of each servo
 volatile static unsigned char servoRelayBits[4]; 
 #endif
-static unsigned char zero;
 #ifdef RELAY 
 static unsigned char allRelayBits;
 static unsigned char relayTmp;
@@ -79,6 +78,13 @@ void MoveServo(unsigned char index)
 	static unsigned char relayBits;
 #endif
 
+#ifdef RelayStart 
+	RelayStart(index, relayBits);
+#ifdef RelayUpdate
+	RelayUpdate();
+#endif
+#endif
+
 	// Initialize
 	servoBit = CLK_BIT(index);	
 	pulseWidth = servoPulseWidth[index];
@@ -92,7 +98,8 @@ void MoveServo(unsigned char index)
 	{
 		// Calculate length of pulse in ns
 		tmp = pulseWidth;
-		tmp = (tmp * 5) + 750;
+		tmp *= 10;
+		//tmp += 750;
 
 		// Start pulse
 		OUTPUT |= servoBit;
@@ -101,7 +108,7 @@ void MoveServo(unsigned char index)
 		WaitNS(tmp);
 		
 		// End pulse
-		OUTPUT &= ~servoBit;
+		OUTPUT ^= servoBit;
 		
 		// Calculate delay
 		tmp = 5000 - tmp; // 5ms - pulse-width (1..2ms)
@@ -152,7 +159,6 @@ void SetupServos()
 #ifdef RELAY
 	allRelayBits = 0;
 #endif
-	zero = 0;
 	for (i = 0; i != 4; i++) 
 	{
 		// Start in the middle position
@@ -183,9 +189,6 @@ void SetServoTarget(unsigned char index, unsigned char pulseWidthTarget)
 	servoPulseWidthTarget[index] = pulseWidthTarget;
 #ifdef RELAY
 	servoRelayBits[index] = relayBits;
-#endif
-#ifdef RelayStart 
-	RelayStart(index, relayBits);
 #endif
 }
 
