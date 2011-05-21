@@ -1,5 +1,5 @@
 /*
- Modelspoorgroep Venlo MGV81 Firmware
+ Modelspoorgroep Venlo MGV136/84/81 Firmware
 
  Copyright (C) Ewout Prangsma <ewout@prangsma.net>
 
@@ -19,9 +19,19 @@
 */
 
 /*
-Setup timer interrupt
+Move the given servo to it's target position.
 */
-void SetupTimer();
+void MoveServo(unsigned char index);
+
+/*
+* Keep processing the servo's until they are all in their target state
+*/
+void MoveServos();
+
+/*
+Setup servo settings
+*/
+void SetupServos();
 
 /*
 Change the target of the servo
@@ -48,8 +58,3 @@ void SetServoAdjust(unsigned char servo, unsigned char adjustMask);
 */
 void UpdateFeedbacks(unsigned char input);
 #endif
-
-/*
-The GIE may be enabled after this method has been called.
-*/
-void ReadyForInterrupts();
