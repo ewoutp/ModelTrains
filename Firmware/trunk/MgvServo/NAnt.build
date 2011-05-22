@@ -4,6 +4,7 @@
 	<property name="basedir" value="${project::get-base-directory()}"/>
 	<property name="builddir" value="${basedir}\Build"/>
 	<property name="srcdir" value="${basedir}\src"/>
+	<property name="version" value="2.0.0.1"/>
 
 	<property name="sdcc" value="sdcc.exe"/>
 
@@ -51,7 +52,7 @@
 				<arg value="-Wl-m"/>
 				<!-- arg value="-Wl-r"/ -->
 				<arg value="-o"/>
-				<arg value="${builddir}\${model}\${model}.hex"/>
+				<arg value="${builddir}\${model}\${model}-${version}.hex"/>
 				<arg value="${builddir}\${model}\obj\main.o"/>
 				<arg value="${builddir}\${model}\obj\servo.o"/>
 				<arg value="${builddir}\${model}\obj\eeprom.o"/>
@@ -78,7 +79,7 @@
 			<arg value="-Wl-m"/>
 			<!-- arg value="-Wl-r"/ -->
 			<arg value="-o"/>
-			<arg value="${builddir}\${model}\${model}.hex"/>
+			<arg value="${builddir}\${model}\${model}-${version}.hex"/>
 			<arg value="${builddir}\${model}\obj\main.o"/>
 		</exec>
 	</target>
@@ -87,7 +88,7 @@
         </target>
 
 	<target name="dist" depends="build" description="Build distribution">
-		<zip zipfile="${builddir}\MgvServo.zip">
+		<zip zipfile="${builddir}\MgvServo-${version}.zip">
 			<fileset basedir="${builddir}">
 				<include name="**/*.hex"/>
 			</fileset>
