@@ -68,12 +68,14 @@ Move the given servo to it's target position.
 */
 void MoveServo(unsigned char index)
 {
-	static unsigned int tmp;
 	static unsigned char servoBit;
-	static unsigned char pulseWidth; // Width of pulse in 10us
+	static unsigned int pulseWidth16; // Width of pulse in 1us
 	static unsigned char pulseWidthTarget;
+	static unsigned int pulseWidthTarget16;
 	static unsigned char adjustMask;
 	static unsigned char servoStateIndex;
+	static unsigned int delay;
+	static unsigned int pulseWidthDelta;
 #ifdef RELAY
 	static unsigned char relayBits;
 #endif
@@ -87,36 +89,57 @@ void MoveServo(unsigned char index)
 
 	// Initialize
 	servoBit = CLK_BIT(index);	
-	pulseWidth = servoPulseWidth[index];
+	pulseWidth16 = servoPulseWidth[index];
+	pulseWidth16 *= 10;
 	pulseWidthTarget = servoPulseWidthTarget[index];
+	pulseWidthTarget16 = 	pulseWidthTarget;
+	pulseWidthTarget16 *= 10;
 	adjustMask = servoAdjustMask[index];
 #ifdef RELAY
 	relayBits = servoRelayBits[index];
 #endif	
-	
-	while (pulseWidth != pulseWidthTarget)
-	{
-		// Calculate length of pulse in ns
-		tmp = pulseWidth;
-		tmp *= 10;
-		//tmp += 750;
 
+	// Initialize speed parameters
+	delay = 1;
+	if (adjustMask & 0x02) delay++;
+	if (adjustMask & 0x04) delay++;
+	if (adjustMask & 0x08) delay++;
+	
+	if (delay == 1) // Slowest
+	{
+		delay = 12000;
+		pulseWidthDelta = 5;
+	}
+	else if (delay == 2) 
+	{
+		delay = 10000;
+		pulseWidthDelta = 5;
+	}
+	else if (delay == 3) 
+	{
+		delay = 8000;
+		pulseWidthDelta = 5;
+	} 
+	else 
+	{	
+		delay = 6000;
+		pulseWidthDelta = 5;
+	}
+	
+	while (pulseWidth16 != pulseWidthTarget16)
+	{
 		// Start pulse
 		OUTPUT |= servoBit;
 
 		// Wait until end of pulse
-		WaitNS(tmp);
+		WaitNS(pulseWidth16);
 		
 		// End pulse
 		OUTPUT ^= servoBit;
-		
-		// Calculate delay
-		tmp = 5000 - tmp; // 5ms - pulse-width (1..2ms)
-		WaitNS(tmp);
 
 		// Middle reached?
 #ifdef RelayMiddle
-		if (pulseWidth == 150) 
+		if (pulseWidth16 == 1500) 
 		{
 			RelayMiddle(index, relayBits);
 #ifdef RelayUpdate
@@ -125,19 +148,22 @@ void MoveServo(unsigned char index)
 		}
 #endif			
 		
+		// Calculate delay
+		WaitNS(delay - pulseWidth16); // 3ms - pulse-width (1..2ms)
+		
 		// Update pulse width
-		if (pulseWidth < pulseWidthTarget) 
+		if (pulseWidth16 < pulseWidthTarget16) 
 		{
-			pulseWidth++;
+			pulseWidth16 += pulseWidthDelta;
 		}
 		else 
 		{
-			pulseWidth--;
+			pulseWidth16 -= pulseWidthDelta;
 		}
 	}
 
 	// Save new state
-	servoPulseWidth[index] = pulseWidth;
+	servoPulseWidth[index] = pulseWidthTarget;
 
 	// Target reached
 #ifdef RELAY
