@@ -80,13 +80,6 @@ void MoveServo(unsigned char index)
 	static unsigned char relayBits;
 #endif
 
-#ifdef RelayStart 
-	RelayStart(index, relayBits);
-#ifdef RelayUpdate
-	RelayUpdate();
-#endif
-#endif
-
 	// Initialize
 	servoBit = CLK_BIT(index);	
 	pulseWidth16 = servoPulseWidth[index];
@@ -99,79 +92,89 @@ void MoveServo(unsigned char index)
 	relayBits = servoRelayBits[index];
 #endif	
 
-	// Initialize speed parameters
-	delay = 1;
-	if (adjustMask & 0x02) delay++;
-	if (adjustMask & 0x04) delay++;
-	if (adjustMask & 0x08) delay++;
-	
-	if (delay == 1) // Slowest
+	if (pulseWidth16 != pulseWidthTarget16)
 	{
-		delay = 12000;
-		pulseWidthDelta = 5;
-	}
-	else if (delay == 2) 
-	{
-		delay = 10000;
-		pulseWidthDelta = 5;
-	}
-	else if (delay == 3) 
-	{
-		delay = 8000;
-		pulseWidthDelta = 5;
-	} 
-	else 
-	{	
-		delay = 6000;
-		pulseWidthDelta = 5;
-	}
-	
-	while (pulseWidth16 != pulseWidthTarget16)
-	{
-		// Start pulse
-		OUTPUT |= servoBit;
-
-		// Wait until end of pulse
-		WaitNS(pulseWidth16);
+		// Initialize speed parameters
+		delay = 1;
+		if (adjustMask & 0x02) delay++;
+		if (adjustMask & 0x04) delay++;
+		if (adjustMask & 0x08) delay++;
 		
-		// End pulse
-		OUTPUT ^= servoBit;
-
-		// Middle reached?
-#ifdef RelayMiddle
-		if (pulseWidth16 == 1500) 
+		if (delay == 1) // Slowest
 		{
-			RelayMiddle(index, relayBits);
-#ifdef RelayUpdate
-			RelayUpdate();
-#endif
+			delay = 12000;
+			pulseWidthDelta = 5;
 		}
-#endif			
-		
-		// Calculate delay
-		WaitNS(delay - pulseWidth16); // 3ms - pulse-width (1..2ms)
-		
-		// Update pulse width
-		if (pulseWidth16 < pulseWidthTarget16) 
+		else if (delay == 2) 
 		{
-			pulseWidth16 += pulseWidthDelta;
+			delay = 10000;
+			pulseWidthDelta = 5;
 		}
+		else if (delay == 3) 
+		{
+			delay = 8000;
+			pulseWidthDelta = 5;
+		} 
 		else 
-		{
-			pulseWidth16 -= pulseWidthDelta;
+		{	
+			delay = 6000;
+			pulseWidthDelta = 5;
 		}
+		
+	#ifdef RelayStart 
+		RelayStart(index, relayBits);
+	#ifdef RelayUpdate
+		RelayUpdate();
+	#endif
+	#endif
+
+		while (pulseWidth16 != pulseWidthTarget16)
+		{
+			// Start pulse
+			OUTPUT |= servoBit;
+
+			// Wait until end of pulse
+			WaitNS(pulseWidth16);
+			
+			// End pulse
+			OUTPUT ^= servoBit;
+
+			// Middle reached?
+	#ifdef RelayMiddle
+			if (pulseWidth16 == 1500) 
+			{
+				RelayMiddle(index, relayBits);
+	#ifdef RelayUpdate
+				RelayUpdate();
+	#endif
+			}
+	#endif			
+			
+			// Calculate delay
+			WaitNS(delay - pulseWidth16); // 3ms - pulse-width (1..2ms)
+			
+			// Update pulse width
+			if (pulseWidth16 < pulseWidthTarget16) 
+			{
+				pulseWidth16 += pulseWidthDelta;
+			}
+			else 
+			{
+				pulseWidth16 -= pulseWidthDelta;
+			}
+		}
+
+		// Save new state
+		servoPulseWidth[index] = pulseWidthTarget;
+
+		// Target reached
+	#ifdef RELAY
+		RelayEnd(index, relayBits);
+	#ifdef RelayUpdate
+		RelayUpdate();
+	#endif
+	#endif
 	}
-
-	// Save new state
-	servoPulseWidth[index] = pulseWidthTarget;
-
-	// Target reached
-#ifdef RELAY
-	RelayEnd(index, relayBits);
-#ifdef RelayUpdate
-	RelayUpdate();
-#endif
-#endif
 }
 
 /*
