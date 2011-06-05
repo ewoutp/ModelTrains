@@ -4,7 +4,7 @@
 	<property name="basedir" value="${project::get-base-directory()}"/>
 	<property name="builddir" value="${basedir}\Build"/>
 	<property name="srcdir" value="${basedir}\src"/>
-	<property name="version" value="2.0.0.2"/>
+	<property name="version" value="2.0.0.3"/>
 
 	<property name="sdcc" value="sdcc.exe"/>
 

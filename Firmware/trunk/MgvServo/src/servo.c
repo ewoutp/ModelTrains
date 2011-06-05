@@ -166,15 +166,15 @@ void MoveServo(unsigned char index)
 
 		// Save new state
 		servoPulseWidth[index] = pulseWidthTarget;
-
-		// Target reached
-	#ifdef RELAY
-		RelayEnd(index, relayBits);
-	#ifdef RelayUpdate
-		RelayUpdate();
-	#endif
-	#endif
 	}
+
+	// Target reached
+#ifdef RELAY
+	RelayEnd(index, relayBits);
+#ifdef RelayUpdate
+	RelayUpdate();
+#endif
+#endif
 }
 
 /*
