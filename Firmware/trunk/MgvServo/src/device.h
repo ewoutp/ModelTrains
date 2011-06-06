@@ -142,12 +142,21 @@ Update relay settings for target position
 Called during each timer interrupt, send relay bits to serial port (if free)
 Send it twice.
 */
-#define RelayUpdate() \
+#define RelayUpdateAndWait() \
 { \
 	while (!TRMT) {  } \
 	TXREG = allRelayBits; \
 	while (!TRMT) {  } \
 	TXREG = allRelayBits; \
+}
+
+/*
+Called at the end of each servo adjustment, send relay bits to serial port (if free)
+*/
+#define RelayUpdate() \
+{ \
+	if (TRMT) {  } \
+		TXREG = allRelayBits; \
 }
 
 #endif
