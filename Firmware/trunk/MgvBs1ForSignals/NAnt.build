@@ -49,6 +49,9 @@
 			<fileset basedir="${builddir}">
 				<include name="**/*.hex"/>
 			</fileset>
+			<fileset basedir="${basedir}\documentation">
+				<include name="**/*.pdf"/>
+			</fileset>
 		</zip>
 	</target>
 
