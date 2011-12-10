@@ -59,10 +59,10 @@
 	<target name="dist" depends="build" description="Build distribution">
 		<zip zipfile="${builddir}\MgvBs1ForSignals-${version}.zip">
 			<fileset basedir="${builddir}">
-				<include name="**/*.hex"/>
+				<include name="*.hex"/>
 			</fileset>
 			<fileset basedir="${basedir}\documentation">
-				<include name="**/*.pdf"/>
+				<include name="*.pdf"/>
 			</fileset>
 		</zip>
 	</target>
