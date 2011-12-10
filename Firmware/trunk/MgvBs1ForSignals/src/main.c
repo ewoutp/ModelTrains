@@ -23,8 +23,16 @@
 // Configuration word
 unsigned int at 0x2007 CONFIG = 0x31c4;
 
+#ifdef CMNGND
+	#define BIT_ON 1
+	#define BIT_OFF 0
+#else
+	#define BIT_ON 0
+	#define BIT_OFF 1
+#endif
+
 #define UPDATE(input, value, mask) { if (input == value) { if (mask < 50) mask++; } else { if (mask > 0) mask--; } }
-#define SETOUTPUT(i, mask, port) { if (i < mask) { port = 0; } else { port = 1; } }
+#define SETOUTPUT(i, mask, port) { if (i < mask) { port = BIT_ON; } else { port = BIT_OFF; } }
 
 /* Main loop */
 void main() 
@@ -45,6 +53,23 @@ void main()
 
 	while (1) 
 	{
+#ifdef COLORS2
+// dual 2-color signals
+		// Read first input
+		input = ((GPIO) >> 3) & 0x01;		
+		
+		// Update masks
+		UPDATE(input, 0, mask1)
+		UPDATE(input, 1, mask2)
+
+		// Read second input
+		input = ((GPIO) >> 4) & 0x01;		
+		
+		// Update masks
+		UPDATE(input, 0, mask3)
+		UPDATE(input, 1, mask4)
+#else
+// 4-color signals
 		// Read input
 		input = ((GPIO) >> 3) & 0x03;
 		
@@ -53,6 +78,7 @@ void main()
 		UPDATE(input, 1, mask2)
 		UPDATE(input, 2, mask3)
 		UPDATE(input, 3, mask4)
+#endif
 		
 		// Set outputs
 		for (i = 0; i < 51; i++) 
